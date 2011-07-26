@@ -38,7 +38,7 @@
 			<list>
 				<value>com.gmail.rretzbach.seriesguy.model.Series</value>
 				<value>com.gmail.rretzbach.seriesguy.model.SearchEngine</value>
-				<value>com.gmail.rretzbach.seriesguy.services.SeriesDataset</value>
+				<value>com.gmail.rretzbach.seriesguy.services.MarshallingDataService.SeriesDataset</value>
 			</list>
 		</property>
 	</bean>

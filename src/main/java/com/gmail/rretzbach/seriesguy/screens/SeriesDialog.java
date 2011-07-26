@@ -49,6 +49,88 @@ import com.gmail.rretzbach.seriesguy.services.DataService;
  */
 public class SeriesDialog extends JDialog {
 
+    /**
+     * Handles image url text drops by downloading the image and assigning it to
+     * the series
+     * 
+     * @author rretzbach
+     * 
+     */
+    public final class ImageDropHandler extends TransferHandler {
+        private static final long serialVersionUID = -7238569708459551744L;
+
+        @Override
+        public int getSourceActions(JComponent c) {
+            return MOVE;
+        }
+
+        @Override
+        // TODO check for url as text
+        // TODO should also import local images
+        public boolean canImport(TransferSupport support) {
+            if (!support.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public boolean importData(TransferSupport support) {
+            if (!canImport(support)) {
+                return false;
+            }
+
+            Transferable t = support.getTransferable();
+            try {
+                String data = (String) t
+                        .getTransferData(DataFlavor.stringFlavor);
+                imagePath = downloadImage(data);
+                ((JLabel) support.getComponent()).setIcon(new ImageIcon(ImageIO
+                        .read(new File(imagePath))));
+
+            } catch (Exception e) {
+                LOG.error("Error while dropping data onto image", e);
+            }
+
+            return true;
+        }
+
+        protected String downloadImage(String url) {
+            try {
+
+                URL url2 = new URI(url).toURL();
+                String output = buildLocalImagePath(url2, dataService
+                        .getImgDirPath().getAbsolutePath(), series.getName());
+
+                FileUtils.copyURLToFile(url2, new File(output));
+
+                return output;
+            } catch (Exception e) {
+                LOG.error("Error while downloading image", e);
+            }
+
+            return null;
+        }
+
+        public String buildLocalImagePath(URL url, String imageDirectoryPath,
+                String seriesName) throws IOException {
+            String name = url.getFile();
+            String ext = "";
+            if (name.matches("(?i).*jpe?g")) {
+                ext = "jpg";
+            } else if (name.matches("(?i).*png")) {
+                ext = "png";
+            } else if (name.matches("(?i).*gif")) {
+                ext = "gif";
+            }
+
+            String output = new File(imageDirectoryPath, seriesName + "." + ext)
+                    .getAbsolutePath();
+            return output;
+        }
+    }
+
     private static final long serialVersionUID = 8152825070548741280L;
     private static Logger LOG = LoggerFactory.getLogger(SeriesDialog.class);
 
@@ -239,74 +321,7 @@ public class SeriesDialog extends JDialog {
                 .getResource("icons/help-icon.png");
         BufferedImage myPicture = ImageIO.read(path);
         picLabel = new JLabel(new ImageIcon(myPicture));
-        TransferHandler newHandler = new TransferHandler() {
-            private static final long serialVersionUID = -7238569708459551744L;
-
-            @Override
-            public int getSourceActions(JComponent c) {
-                return MOVE;
-            }
-
-            @Override
-            // TODO check for url as text
-            // TODO should also import local images
-            public boolean canImport(TransferSupport support) {
-                if (!support.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-                    return false;
-                }
-
-                return true;
-            }
-
-            @Override
-            public boolean importData(TransferSupport support) {
-                if (!canImport(support)) {
-                    return false;
-                }
-
-                Transferable t = support.getTransferable();
-                try {
-                    String data = (String) t
-                            .getTransferData(DataFlavor.stringFlavor);
-                    imagePath = downloadImage(data);
-                    ((JLabel) support.getComponent()).setIcon(new ImageIcon(
-                            ImageIO.read(new File(imagePath))));
-
-                } catch (Exception e) {
-                    LOG.error("Error while dropping data onto image", e);
-                }
-
-                return true;
-            }
-
-            // FIXME must be case insensitive
-            protected String downloadImage(String url) {
-                try {
-
-                    URL url2 = new URI(url).toURL();
-                    String name = url2.getFile();
-                    String ext = "";
-                    if (name.matches(".*jpe?g")) {
-                        ext = "jpg";
-                    } else if (name.matches(".*png")) {
-                        ext = "png";
-                    } else if (name.matches(".*gif")) {
-                        ext = "gif";
-                    }
-
-                    String output = dataService.getImgDirPath() + "\\"
-                            + series.getName() + "." + ext;
-
-                    FileUtils.copyURLToFile(url2, new File(output));
-
-                    return output;
-                } catch (Exception e) {
-                    LOG.error("Error while downloading image", e);
-                }
-
-                return null;
-            }
-        };
+        TransferHandler newHandler = new ImageDropHandler();
         picLabel.setTransferHandler(newHandler);
         add(picLabel);
     }
