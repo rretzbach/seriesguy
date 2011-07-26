@@ -1,5 +1,5 @@
 ## Screenshot
-![seriesguy screenshot](https://github.com/rretzbach/seriesguy/blob/master/screenshot.png "seriesguy screenshot")
+![seriesguy screenshot](https://github.com/rretzbach/seriesguy/raw/master/screenshot.png "seriesguy screenshot")
 
 ## Features
 
