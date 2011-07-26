@@ -1,22 +1,25 @@
-# Features
+## Screenshot
+![seriesguy screenshot](https://github.com/rretzbach/seriesguy/blob/master/screenshot.png "seriesguy screenshot")
 
-## Keep track of what you watch
+## Features
+
+### Keep track of what you watch
 * Manage series
 * Remember the last seen episode
 
-## Find new episodes
+### Find new episodes
 * Manage search engines
 * Query them for unseen episodes
 
-## Browse to the search results
+### Browse to the search results
 * Find anything interesting and open it in your browser
 
-# The idea
+## The idea
 * 0% HTML parsing
 * More configuration, more control
 * Easy to maintain source code
 
-# Installation
+## Installation
 Build an executable jar:
 
     $ mvn package
