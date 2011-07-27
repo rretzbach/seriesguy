@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -35,6 +37,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import com.gmail.rretzbach.seriesguy.model.QueryResult;
 import com.gmail.rretzbach.seriesguy.model.Series;
@@ -47,6 +50,7 @@ import com.gmail.rretzbach.seriesguy.services.DataService;
  * @author rretzbach
  * 
  */
+@Component
 public class ResultDialog extends JDialog {
 
     /**
@@ -200,6 +204,7 @@ public class ResultDialog extends JDialog {
     private static final long serialVersionUID = 8152825070548741280L;
     private static Logger LOG = LoggerFactory.getLogger(ResultDialog.class);
 
+    @Inject
     protected DataService dataService;
 
     public void setDataService(DataService dataService) {
@@ -211,6 +216,7 @@ public class ResultDialog extends JDialog {
     protected JLabel statusBar;
     protected SwingWorker<Void, QueryResult> swingWorker;
 
+    @PostConstruct
     protected void init() throws IllegalAccessException,
             InvocationTargetException, NoSuchMethodException {
         setModal(true);

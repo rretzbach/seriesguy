@@ -17,13 +17,14 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.oxm.Marshaller;
-import org.springframework.oxm.Unmarshaller;
+import org.springframework.oxm.xstream.XStreamMarshaller;
+import org.springframework.stereotype.Component;
 
 import com.gmail.rretzbach.seriesguy.model.SearchEngine;
 import com.gmail.rretzbach.seriesguy.model.Series;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 
+@Component
 public class MarshallingDataService implements DataService {
 
     protected static final String DATAFILE_PREF_KEY = "series.datafile";
@@ -32,16 +33,7 @@ public class MarshallingDataService implements DataService {
     protected static Logger LOG = LoggerFactory
             .getLogger(MarshallingDataService.class);
 
-    protected Marshaller marshaller;
-    protected Unmarshaller unmarshaller;
-
-    public void setMarshaller(Marshaller marshaller) {
-        this.marshaller = marshaller;
-    }
-
-    public void setUnmarshaller(Unmarshaller unmarshaller) {
-        this.unmarshaller = unmarshaller;
-    }
+    protected XStreamMarshaller marshaller;
 
     @XStreamAlias("seriesdataset")
     public class SeriesDataset {
@@ -67,6 +59,13 @@ public class MarshallingDataService implements DataService {
 
     protected List<Series> cachedSeries;
     protected List<SearchEngine> cachedSearchEngines;
+
+    public MarshallingDataService() {
+        marshaller = new XStreamMarshaller();
+        marshaller.setAnnotatedClass(SeriesDataset.class);
+        marshaller.setAnnotatedClass(Series.class);
+        marshaller.setAnnotatedClass(SearchEngine.class);
+    }
 
     @Override
     public List<Series> findAllSeries() throws IOException {
@@ -162,7 +161,7 @@ public class MarshallingDataService implements DataService {
         SeriesDataset seriesDataset;
         try {
 
-            seriesDataset = (SeriesDataset) unmarshaller
+            seriesDataset = (SeriesDataset) marshaller
                     .unmarshal(new StreamSource(new BufferedReader(
                             new FileReader(getFilePath()))));
             cachedSeries = seriesDataset.getSeries();

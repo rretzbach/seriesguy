@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -26,6 +28,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import com.gmail.rretzbach.seriesguy.model.SearchEngine;
 import com.gmail.rretzbach.seriesguy.services.DataService;
@@ -36,6 +39,7 @@ import com.gmail.rretzbach.seriesguy.services.DataService;
  * @author rretzbach
  * 
  */
+@Component
 public class SearchEnginesDialog extends JDialog {
 
     private static final long serialVersionUID = 8994530590146294695L;
@@ -43,6 +47,7 @@ public class SearchEnginesDialog extends JDialog {
     private static Logger LOG = LoggerFactory
             .getLogger(SearchEnginesDialog.class);
 
+    @Inject
     protected DataService dataService;
 
     public void setDataService(DataService dataService) {
@@ -60,6 +65,7 @@ public class SearchEnginesDialog extends JDialog {
 
     protected JList searchEngineList;
 
+    @PostConstruct
     protected void init() throws IllegalAccessException,
             InvocationTargetException, NoSuchMethodException {
         setModal(true);

@@ -17,7 +17,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.annotation.PostConstruct;
 import javax.imageio.ImageIO;
+import javax.inject.Inject;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -36,6 +38,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import com.gmail.rretzbach.seriesguy.model.SearchEngine;
 import com.gmail.rretzbach.seriesguy.model.Series;
@@ -47,6 +50,8 @@ import com.gmail.rretzbach.seriesguy.services.DataService;
  * @author rretzbach
  * 
  */
+@Component
+// TODO height of dialog should be appropriate
 public class SeriesDialog extends JDialog {
 
     /**
@@ -134,6 +139,7 @@ public class SeriesDialog extends JDialog {
     private static final long serialVersionUID = 8152825070548741280L;
     private static Logger LOG = LoggerFactory.getLogger(SeriesDialog.class);
 
+    @Inject
     protected DataService dataService;
 
     public void setDataService(DataService dataService) {
@@ -147,6 +153,7 @@ public class SeriesDialog extends JDialog {
     protected JComboBox searchEngineComboBox;
     protected JLabel picLabel;
 
+    @PostConstruct
     protected void init() throws IllegalAccessException,
             InvocationTargetException, NoSuchMethodException, IOException {
         setModal(true);

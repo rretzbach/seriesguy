@@ -1,6 +1,5 @@
 package com.gmail.rretzbach.seriesguy;
 
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -14,6 +13,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -36,6 +37,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import com.gmail.rretzbach.seriesguy.model.Series;
 import com.gmail.rretzbach.seriesguy.screens.ResultDialog;
@@ -51,6 +53,7 @@ import com.gmail.rretzbach.seriesguy.services.DataService;
  */
 // TODO show that file was saved successfully
 // TODO display which file was loaded
+@Component
 public class MainFrame extends JFrame {
 
     private static Logger LOG = LoggerFactory.getLogger(MainFrame.class);
@@ -63,8 +66,9 @@ public class MainFrame extends JFrame {
         }
 
         @Override
-        public Component getListCellRendererComponent(JList list, Object value,
-                int index, boolean isSelected, boolean cellHasFocus) {
+        public java.awt.Component getListCellRendererComponent(JList list,
+                Object value, int index, boolean isSelected,
+                boolean cellHasFocus) {
 
             cacheButton(value, index);
 
@@ -149,12 +153,16 @@ public class MainFrame extends JFrame {
 
     }
 
+    @Inject
     protected DataService dataService;
 
+    @Inject
     protected SeriesDialog editSeriesDialog;
 
+    @Inject
     protected SearchEnginesDialog editSearchEnginesDialog;
 
+    @Inject
     protected ResultDialog queryResultDialog;
 
     public MainFrame() {
@@ -190,6 +198,7 @@ public class MainFrame extends JFrame {
 
     protected DefaultListModel seriesListModel;
 
+    @PostConstruct
     protected void init() {
         setTitle("SeriesGuy 1.0");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
