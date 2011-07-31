@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.Preferences;
 
-import javax.swing.JFileChooser;
+import javax.annotation.PostConstruct;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
@@ -27,180 +27,158 @@ import com.thoughtworks.xstream.annotations.XStreamAlias;
 @Component
 public class MarshallingDataService implements DataService {
 
-    protected static final String DATAFILE_PREF_KEY = "series.datafile";
-    protected static final String IMGDIR_PREF_KEY = "series.imgdir";
+	protected static final String DATAFILE_PREF_KEY = "series.datafile";
+	protected static final String IMGDIR_PREF_KEY = "series.imgdir";
 
-    protected static Logger LOG = LoggerFactory
-            .getLogger(MarshallingDataService.class);
+	protected static Logger LOG = LoggerFactory
+			.getLogger(MarshallingDataService.class);
 
-    protected XStreamMarshaller marshaller;
+	protected XStreamMarshaller marshaller;
 
-    @XStreamAlias("seriesdataset")
-    public class SeriesDataset {
-        private List<Series> series;
-        private List<SearchEngine> engines;
+	protected File datafile;
+	protected File imagedir;
 
-        public void setEngines(List<SearchEngine> engines) {
-            this.engines = engines;
-        }
+	@XStreamAlias("seriesdataset")
+	public static class SeriesDataset {
+		private List<Series> series;
+		private List<SearchEngine> engines;
 
-        public List<SearchEngine> getEngines() {
-            return engines;
-        }
+		public void setEngines(List<SearchEngine> engines) {
+			this.engines = engines;
+		}
 
-        public void setSeries(List<Series> series) {
-            this.series = series;
-        }
+		public List<SearchEngine> getSearchEngines() {
+			if (engines == null) {
+				engines = new ArrayList<SearchEngine>();
+			}
+			return engines;
+		}
 
-        public List<Series> getSeries() {
-            return series;
-        }
-    }
+		public void setSeries(List<Series> series) {
+			this.series = series;
+		}
 
-    protected List<Series> cachedSeries;
-    protected List<SearchEngine> cachedSearchEngines;
+		public List<Series> getSeries() {
+			if (series == null) {
+				series = new ArrayList<Series>();
+			}
+			return series;
+		}
+	}
 
-    public MarshallingDataService() {
-        marshaller = new XStreamMarshaller();
-        marshaller.setAnnotatedClass(SeriesDataset.class);
-        marshaller.setAnnotatedClass(Series.class);
-        marshaller.setAnnotatedClass(SearchEngine.class);
-    }
+	protected SeriesDataset dataset;
 
-    @Override
-    public List<Series> findAllSeries() throws IOException {
-        if (cachedSeries == null) {
-            reload();
-        }
+	public MarshallingDataService() {
 
-        return cachedSeries;
-    }
+	}
 
-    protected File getFilePath() throws IOException {
-        Preferences userRoot = Preferences.userRoot();
+	@PostConstruct
+	public void init() {
+		marshaller = new XStreamMarshaller();
+		marshaller.setAnnotatedClass(SeriesDataset.class);
+		marshaller.setAnnotatedClass(Series.class);
+		marshaller.setAnnotatedClass(SearchEngine.class);
 
-        String filePath = userRoot.get(DATAFILE_PREF_KEY, null);
-        if (filePath != null) {
-            return new File(filePath);
-        }
+		dataset = new SeriesDataset();
 
-        File file = chooseSaveLocation();
-        if (file != null) {
-            return file;
-        }
+		Preferences userRoot = Preferences.userRoot();
+		{
+			String filepath = userRoot.get(DATAFILE_PREF_KEY, null);
+			if (filepath != null) {
+				datafile = new File(filepath);
+				try {
+					reload();
+				} catch (Exception e) {
+					LOG.error("Error while loading data", e);
+				}
+			}
+		}
+		{
+			String filePath = userRoot.get(IMGDIR_PREF_KEY, null);
+			if (filePath != null) {
+				imagedir = new File(filePath);
+			}
+		}
+	}
 
-        LOG.trace("Opening datafile cancelled by user");
-        throw new RuntimeException("Opening datafile cancelled by user");
-    }
+	@Override
+	public List<Series> findAllSeries() {
+		return dataset.getSeries();
+	}
 
-    public File getImgDirPath() throws IOException {
-        Preferences userRoot = Preferences.userRoot();
+	public File getImageDir() {
+		return imagedir;
+	}
 
-        String filePath = userRoot.get(IMGDIR_PREF_KEY, null);
-        if (filePath != null) {
-            return new File(filePath);
-        }
+	@Override
+	public List<SearchEngine> findAllSearchEngines() {
+		return dataset.getSearchEngines();
+	}
 
-        File file = chooseImageLocation();
-        if (file != null) {
-            return file;
-        }
+	@Override
+	public void save() throws IOException {
+		marshaller.marshal(dataset, new StreamResult(new BufferedWriter(
+				new FileWriter(datafile))));
+	}
 
-        throw new RuntimeException(
-                "Choosing images directory cancelled by user");
-    }
+	@Override
+	public void reload() throws IOException {
+		try {
+			dataset = (SeriesDataset) marshaller.unmarshal(new StreamSource(
+					new BufferedReader(new FileReader(datafile))));
+		} catch (FileNotFoundException e) {
+			LOG.error("Error while loading from xml file", e);
+		}
 
-    public File chooseSaveLocation() {
-        final JFileChooser fc = new JFileChooser();
-        fc.setDialogTitle("Please choose a file to save series data");
-        fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        int returnVal = fc.showOpenDialog(null);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-            Preferences userRoot = Preferences.userRoot();
-            userRoot.put(DATAFILE_PREF_KEY, fc.getSelectedFile().toString());
-            return fc.getSelectedFile();
-        }
+	}
 
-        return null;
-    }
+	@Override
+	public SearchEngine createSearchEngine() {
+		SearchEngine searchEngine = new SearchEngine();
+		dataset.getSearchEngines().add(searchEngine);
+		return searchEngine;
+	}
 
-    public File chooseImageLocation() {
-        final JFileChooser fc = new JFileChooser();
-        fc.setDialogTitle("Please choose a directory to save series images");
-        fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        int returnVal = fc.showOpenDialog(null);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-            Preferences userRoot = Preferences.userRoot();
-            userRoot.put(IMGDIR_PREF_KEY, fc.getSelectedFile().toString());
-            return fc.getSelectedFile();
-        }
+	@Override
+	public void deleteSearchEngine(SearchEngine searchEngine) {
+		dataset.getSearchEngines().remove(searchEngine);
+	}
 
-        return null;
-    }
+	@Override
+	public Series createSeries() {
+		findAllSeries();
+		Series series = new Series();
+		dataset.getSeries().add(series);
+		return series;
+	}
 
-    @Override
-    public List<SearchEngine> findAllSearchEngines() throws IOException {
-        if (cachedSearchEngines == null) {
-            reload();
-        }
+	@Override
+	public void deleteSeries(Series series) {
+		findAllSeries();
+		dataset.getSeries().remove(series);
+	}
 
-        return cachedSearchEngines;
-    }
+	@Override
+	public void saveAs(File selectedFile) throws IOException {
+		switchDatafile(selectedFile);
+		save();
+	}
 
-    @Override
-    public void save() throws IOException {
-        SeriesDataset seriesDataset = new SeriesDataset();
-        seriesDataset.setEngines(cachedSearchEngines);
-        seriesDataset.setSeries(cachedSeries);
-        marshaller.marshal(seriesDataset, new StreamResult(new BufferedWriter(
-                new FileWriter(getFilePath()))));
-    }
+	public void switchDatafile(File datafile) {
+		Preferences userRoot = Preferences.userRoot();
+		userRoot.put(IMGDIR_PREF_KEY, datafile.getAbsolutePath());
+		this.datafile = datafile;
+	}
 
-    @Override
-    public void reload() throws IOException {
-        SeriesDataset seriesDataset;
-        try {
+	@Override
+	public void load(File file) throws IOException {
+		switchDatafile(file);
+		reload();
+	}
 
-            seriesDataset = (SeriesDataset) marshaller
-                    .unmarshal(new StreamSource(new BufferedReader(
-                            new FileReader(getFilePath()))));
-            cachedSeries = seriesDataset.getSeries();
-            cachedSearchEngines = seriesDataset.getEngines();
-        } catch (FileNotFoundException e) {
-            LOG.error("Error while loading from xml file", e);
-            cachedSeries = new ArrayList<Series>();
-            cachedSearchEngines = new ArrayList<SearchEngine>();
-        }
-
-    }
-
-    @Override
-    public SearchEngine createSearchEngine() throws IOException {
-        findAllSearchEngines();
-        SearchEngine searchEngine = new SearchEngine();
-        cachedSearchEngines.add(searchEngine);
-        return searchEngine;
-    }
-
-    @Override
-    public void deleteSearchEngine(SearchEngine searchEngine)
-            throws IOException {
-        findAllSearchEngines();
-        cachedSearchEngines.remove(searchEngine);
-    }
-
-    @Override
-    public Series createSeries() throws IOException {
-        findAllSeries();
-        Series series = new Series();
-        cachedSeries.add(series);
-        return series;
-    }
-
-    @Override
-    public void deleteSeries(Series series) throws IOException {
-        findAllSeries();
-        cachedSeries.remove(series);
-    }
+	@Override
+	public String getSourceDescription() {
+		return datafile.getAbsolutePath();
+	}
 
 }

@@ -5,7 +5,6 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +14,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -42,185 +42,178 @@ import com.gmail.rretzbach.seriesguy.services.DataService;
 @Component
 public class SearchEnginesDialog extends JDialog {
 
-    private static final long serialVersionUID = 8994530590146294695L;
+	private static final long serialVersionUID = 8994530590146294695L;
 
-    private static Logger LOG = LoggerFactory
-            .getLogger(SearchEnginesDialog.class);
+	private static Logger LOG = LoggerFactory
+			.getLogger(SearchEnginesDialog.class);
 
-    @Inject
-    protected DataService dataService;
+	@Inject
+	protected DataService dataService;
 
-    public void setDataService(DataService dataService) {
-        this.dataService = dataService;
-    }
+	public void setDataService(DataService dataService) {
+		this.dataService = dataService;
+	}
 
-    protected Map<String, JTextField> formElements;
-    private JLabel titleLabel;
+	protected Map<String, JTextField> formElements;
+	private JLabel titleLabel;
 
-    protected List<SearchEngine> searchEngines;
+	protected List<SearchEngine> searchEngines;
 
-    protected JTextField nameField;
+	protected JTextField nameField;
 
-    protected JTextField urlField;
+	protected JTextField urlField;
 
-    protected JList searchEngineList;
+	protected JList searchEngineList;
 
-    @PostConstruct
-    protected void init() throws IllegalAccessException,
-            InvocationTargetException, NoSuchMethodException {
-        setModal(true);
-        setLayout(new MigLayout("fill, wrap 4",
-                "[15%][15%]rel[label]rel[grow, fill]"));
-        setDefaultCloseOperation(HIDE_ON_CLOSE);
-        setPreferredSize(new Dimension(640, 320));
+	@PostConstruct
+	protected void init() throws IllegalAccessException,
+			InvocationTargetException, NoSuchMethodException {
+		setIconImage(new ImageIcon(getClass().getClassLoader().getResource(
+				"icons/tv.png")).getImage());
 
-        formElements = new HashMap<String, JTextField>();
+		setModal(true);
+		setLayout(new MigLayout("fill, wrap 4",
+				"[15%][15%]rel[label]rel[grow, fill]"));
+		setDefaultCloseOperation(HIDE_ON_CLOSE);
+		setPreferredSize(new Dimension(640, 320));
 
-        setTitle("Search engines");
+		formElements = new HashMap<String, JTextField>();
 
-        titleLabel = new JLabel(getTitle());
-        Font font = titleLabel.getFont();
-        Font deriveFont = font.deriveFont(20.0f);
-        titleLabel.setFont(deriveFont);
-        add(titleLabel, "span 4, growx 0, align center, gapy paragraph");
+		setTitle("Search engines");
 
-        searchEngineList = new JList();
-        searchEngineList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		titleLabel = new JLabel(getTitle());
+		Font font = titleLabel.getFont();
+		Font deriveFont = font.deriveFont(20.0f);
+		titleLabel.setFont(deriveFont);
+		add(titleLabel, "span 4, growx 0, align center, gapy paragraph");
 
-        searchEngineList.addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                final SearchEngine searchEngine = getCurrentlySelectedSearchEngine();
+		searchEngineList = new JList();
+		searchEngineList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-                boolean searchEngineSelected = searchEngine != null;
-                nameField.setEnabled(searchEngineSelected);
-                urlField.setEnabled(searchEngineSelected);
+		searchEngineList.addListSelectionListener(new ListSelectionListener() {
+			@Override
+			public void valueChanged(ListSelectionEvent e) {
+				final SearchEngine searchEngine = getCurrentlySelectedSearchEngine();
 
-                if (searchEngineSelected) {
-                    nameField.setText(searchEngine.getName());
-                    urlField.setText(searchEngine.getUrlTemplate());
-                }
-            }
-        });
+				boolean searchEngineSelected = searchEngine != null;
+				nameField.setEnabled(searchEngineSelected);
+				urlField.setEnabled(searchEngineSelected);
 
-        add(searchEngineList, "span 2 2, grow");
+				if (searchEngineSelected) {
+					nameField.setText(searchEngine.getName());
+					urlField.setText(searchEngine.getUrlTemplate());
+				}
+			}
+		});
 
-        add(new JLabel("Name:"));
-        nameField = new JTextField();
-        add(nameField);
-        nameField.addKeyListener(new KeyAdapter() {
-            public void keyReleased(java.awt.event.KeyEvent e) {
-                getCurrentlySelectedSearchEngine().setName(
-                        ((JTextField) e.getSource()).getText());
-            }
+		add(searchEngineList, "span 2 2, grow");
 
-        });
+		add(new JLabel("Name:"));
+		nameField = new JTextField();
+		nameField.setEnabled(false);
+		add(nameField);
+		nameField.addKeyListener(new KeyAdapter() {
+			public void keyReleased(java.awt.event.KeyEvent e) {
+				getCurrentlySelectedSearchEngine().setName(
+						((JTextField) e.getSource()).getText());
+			}
 
-        add(new JLabel("URL:"));
-        urlField = new JTextField();
-        add(urlField);
-        urlField.addKeyListener(new KeyAdapter() {
-            public void keyReleased(java.awt.event.KeyEvent e) {
-                getCurrentlySelectedSearchEngine().setUrlTemplate(
-                        ((JTextField) e.getSource()).getText());
-            };
-        });
+		});
 
-        JButton newButton = new JButton("New");
-        newButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onNew();
-            }
-        });
-        add(newButton, "sizegroup button, align center");
-        JButton removeButton = new JButton("Remove");
-        removeButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onRemove();
-            }
-        });
-        add(removeButton, "sizegroup button, align center");
+		add(new JLabel("URL:"));
+		urlField = new JTextField();
+		urlField.setEnabled(false);
+		add(urlField);
+		urlField.addKeyListener(new KeyAdapter() {
+			public void keyReleased(java.awt.event.KeyEvent e) {
+				getCurrentlySelectedSearchEngine().setUrlTemplate(
+						((JTextField) e.getSource()).getText());
+			};
+		});
 
-        add(buildSaveButton(),
-                "sizegroup button, tag apply, span 4, split 2, newline");
-        add(buildCancelButton(), "sizegroup button, tag cancel");
+		JButton newButton = new JButton("New");
+		newButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				onNew();
+			}
+		});
+		add(newButton, "sizegroup button, align center");
+		JButton removeButton = new JButton("Remove");
+		removeButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				onRemove();
+			}
+		});
+		add(removeButton, "sizegroup button, align center");
 
-        pack();
-    }
+		add(buildSaveButton(),
+				"sizegroup button, tag apply, span 4, split 2, newline");
+		add(buildCancelButton(), "sizegroup button, tag cancel");
 
-    public void updateSearchEngineListModel() {
-        try {
-            searchEngines = new ArrayList<SearchEngine>(
-                    dataService.findAllSearchEngines());
-        } catch (IOException e) {
-            LOG.error("Error while fetching search engines", e);
-        }
-        DefaultListModel model = new DefaultListModel();
-        for (SearchEngine searchEngine : searchEngines) {
-            model.addElement(searchEngine);
-        }
-        searchEngineList.setModel(model);
-    }
+		pack();
+	}
 
-    protected void onRemove() {
-        try {
-            dataService.deleteSearchEngine(getCurrentlySelectedSearchEngine());
-            updateSearchEngineListModel();
-        } catch (IOException e) {
-            LOG.error("Error while removing search engine", e);
-        }
-    }
+	public void updateSearchEngineListModel() {
+		searchEngines = new ArrayList<SearchEngine>(
+				dataService.findAllSearchEngines());
+		DefaultListModel model = new DefaultListModel();
+		for (SearchEngine searchEngine : searchEngines) {
+			model.addElement(searchEngine);
+		}
+		searchEngineList.setModel(model);
+	}
 
-    protected void onNew() {
-        try {
-            SearchEngine createSearchEngine = dataService.createSearchEngine();
-            updateSearchEngineListModel();
-            boolean shouldScroll = true;
-            searchEngineList.setSelectedValue(createSearchEngine, shouldScroll);
-        } catch (IOException e) {
-            LOG.error("Error while creating a new search engine", e);
-        }
-    }
+	protected void onRemove() {
+		dataService.deleteSearchEngine(getCurrentlySelectedSearchEngine());
+		updateSearchEngineListModel();
+	}
 
-    protected SearchEngine getCurrentlySelectedSearchEngine() {
-        return (SearchEngine) searchEngineList.getSelectedValue();
-    };
+	protected void onNew() {
+		SearchEngine createSearchEngine = dataService.createSearchEngine();
+		updateSearchEngineListModel();
+		boolean shouldScroll = true;
+		searchEngineList.setSelectedValue(createSearchEngine, shouldScroll);
+	}
 
-    private JButton buildSaveButton() {
-        JButton button = new JButton("Save");
-        button.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onSave();
-            }
-        });
-        return button;
-    }
+	protected SearchEngine getCurrentlySelectedSearchEngine() {
+		return (SearchEngine) searchEngineList.getSelectedValue();
+	};
 
-    protected void onSave() {
-        try {
-            setVisible(false);
-        } catch (Exception e) {
-            LOG.error("Error while writing series properties", e);
-        }
+	private JButton buildSaveButton() {
+		JButton button = new JButton("Save");
+		button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				onSave();
+			}
+		});
+		return button;
+	}
 
-    }
+	protected void onSave() {
+		try {
+			setVisible(false);
+		} catch (Exception e) {
+			LOG.error("Error while writing series properties", e);
+		}
 
-    private JButton buildCancelButton() {
-        JButton button = new JButton("Cancel");
-        button.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onCancel();
-            }
-        });
-        return button;
-    }
+	}
 
-    protected void onCancel() {
-        setVisible(false);
-    }
+	private JButton buildCancelButton() {
+		JButton button = new JButton("Cancel");
+		button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				onCancel();
+			}
+		});
+		return button;
+	}
+
+	protected void onCancel() {
+		setVisible(false);
+	}
 
 }

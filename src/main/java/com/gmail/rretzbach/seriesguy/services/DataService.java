@@ -8,26 +8,28 @@ import com.gmail.rretzbach.seriesguy.model.SearchEngine;
 import com.gmail.rretzbach.seriesguy.model.Series;
 
 public interface DataService {
-    List<Series> findAllSeries() throws IOException;
+	List<Series> findAllSeries();
 
-    List<SearchEngine> findAllSearchEngines() throws IOException;
+	List<SearchEngine> findAllSearchEngines();
 
-    SearchEngine createSearchEngine() throws IOException;
+	SearchEngine createSearchEngine();
 
-    void deleteSearchEngine(SearchEngine searchEngine) throws IOException;
+	void deleteSearchEngine(SearchEngine searchEngine);
 
-    Series createSeries() throws IOException;
+	Series createSeries();
 
-    void deleteSeries(Series series) throws IOException;
+	void deleteSeries(Series series);
 
-    void save() throws IOException;
+	void save() throws IOException;
 
-    void reload() throws IOException;
+	void saveAs(File file) throws IOException;
 
-    File chooseSaveLocation();
+	void reload() throws IOException;
 
-    File chooseImageLocation();
+	void load(File file) throws IOException;
 
-    File getImgDirPath() throws IOException;
+	File getImageDir();
+
+	String getSourceDescription();
 
 }
