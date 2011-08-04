@@ -54,228 +54,223 @@ import com.gmail.rretzbach.seriesguy.services.DataService;
 @Component
 public class ResultDialog extends JDialog {
 
-	/**
-	 * Opens the clicked query result in the default browser
-	 * 
-	 * @author rretzbach
-	 * 
-	 */
-	private final class DoubleClickListener extends MouseAdapter {
-		@Override
-		public void mouseClicked(MouseEvent me) {
-			if (me.getClickCount() > 1) {
-				QueryResult selectedResult = (QueryResult) ((JList) me
-						.getSource()).getSelectedValue();
-				String queryURL;
-				try {
-					queryURL = selectedResult.getSeries().getSearchEngineURL(
-							selectedResult.getOffset());
-					if (Desktop.isDesktopSupported()) {
-						Desktop desktop = Desktop.getDesktop();
-						if (desktop.isSupported(Desktop.Action.BROWSE)) {
-							desktop.browse(new URI(queryURL));
-						}
-					}
-				} catch (Exception e) {
-					LOG.debug("Series is {}", selectedResult.getSeries());
-					LOG.error(
-							"Error while trying to open a search engine url from series",
-							e);
-				}
-			}
-		}
-	}
+    /**
+     * Opens the clicked query result in the default browser
+     * 
+     * @author rretzbach
+     * 
+     */
+    private final class DoubleClickListener extends MouseAdapter {
+        @Override
+        public void mouseClicked(MouseEvent me) {
+            if (me.getClickCount() > 1) {
+                QueryResult selectedResult = (QueryResult) ((JList) me
+                        .getSource()).getSelectedValue();
+                String queryURL;
+                try {
+                    queryURL = selectedResult.getSeries().getSearchEngineURL(
+                            selectedResult.getOffset());
+                    if (Desktop.isDesktopSupported()) {
+                        Desktop desktop = Desktop.getDesktop();
+                        if (desktop.isSupported(Desktop.Action.BROWSE)) {
+                            desktop.browse(new URI(queryURL));
+                        }
+                    }
+                } catch (Exception e) {
+                    LOG.debug("Series is {}", selectedResult.getSeries());
+                    LOG.error(
+                            "Error while trying to open a search engine url from series",
+                            e);
+                }
+            }
+        }
+    }
 
-	/**
-	 * Queries search engines and adds results to the list whenever a match was
-	 * found
-	 * 
-	 * @author rretzbach
-	 * 
-	 */
-	private final class WebResultWorker extends SwingWorker<Void, QueryResult> {
+    /**
+     * Queries search engines and adds results to the list whenever a match was
+     * found
+     * 
+     * @author rretzbach
+     * 
+     */
+    private final class WebResultWorker extends SwingWorker<Void, QueryResult> {
 
-		public String fetchURL(String url) throws IOException,
-				ClientProtocolException {
-			// log.trace("Fetching site " + url);
-			HttpClient httpclient = new DefaultHttpClient();
-			HttpGet httpget = new HttpGet(url);
-			String page = httpclient.execute(httpget,
-					new ResponseHandler<String>() {
+        public String fetchURL(String url) throws IOException,
+                ClientProtocolException {
+            // log.trace("Fetching site " + url);
+            HttpClient httpclient = new DefaultHttpClient();
+            HttpGet httpget = new HttpGet(url);
+            String page = httpclient.execute(httpget,
+                    new ResponseHandler<String>() {
 
-						@Override
-						public String handleResponse(HttpResponse arg0)
-								throws ClientProtocolException, IOException {
-							HttpEntity entity = arg0.getEntity();
-							if (entity != null) {
-								return EntityUtils.toString(entity);
-							}
-							return null;
-						}
+                        @Override
+                        public String handleResponse(HttpResponse arg0)
+                                throws ClientProtocolException, IOException {
+                            HttpEntity entity = arg0.getEntity();
+                            if (entity != null) {
+                                return EntityUtils.toString(entity);
+                            }
+                            return null;
+                        }
 
-					});
+                    });
 
-			// log.trace("Fetched site " + url);
-			return page;
-		}
+            // log.trace("Fetched site " + url);
+            return page;
+        }
 
-		@Override
-		protected Void doInBackground() throws Exception {
-			List<Series> series = dataService.findAllSeries();
-			for (Series s : series) {
-				if (isCancelled()) {
-					break;
-				}
+        @Override
+        protected Void doInBackground() throws Exception {
+            List<Series> series = dataService.findAllSeries();
+            for (Series s : series) {
+                if (isCancelled()) {
+                    break;
+                }
 
-				Boolean seriesShouldBeChecked = !s.getFinished();
-				if (!seriesShouldBeChecked) {
-					continue;
-				}
+                Boolean seriesShouldBeChecked = !s.getFinished();
+                if (!seriesShouldBeChecked) {
+                    continue;
+                }
 
-				int offset = 0;
-				boolean expectsNextEpisode = true;
+                int offset = 0;
+                boolean expectsNextEpisode = true;
 
-				while (expectsNextEpisode) {
-					statusBar.setText(s.getName() + " "
-							+ (s.getLastSeenEpisode() + offset));
+                while (expectsNextEpisode) {
+                    statusBar.setText(s.getName() + " "
+                            + (s.getLastSeenEpisode() + offset));
 
-					if (isCancelled()) {
-						break;
-					}
+                    if (isCancelled()) {
+                        break;
+                    }
 
-					offset += 1;
+                    offset += 1;
 
-					String url = s.getSearchEngineURL(offset);
-					String page = fetchURL(url);
+                    String url = s.getSearchEngineURL(offset);
+                    String page = fetchURL(url);
 
-					boolean pageCouldBeRetrieved = page != null;
-					if (!pageCouldBeRetrieved) {
-						LOG.trace("Page could not be retrieved for url {}", url);
-						expectsNextEpisode = false;
-						continue;
-					}
+                    boolean pageCouldBeRetrieved = page != null;
+                    if (!pageCouldBeRetrieved) {
+                        LOG.trace("Page could not be retrieved for url {}", url);
+                        expectsNextEpisode = false;
+                        continue;
+                    }
 
-					// TODO early validation in UI if input cannot be converted
-					// to regex
-					Pattern pattern = Pattern.compile(
-							".{0,25}+" + s.getRegex(offset) + ".{0,25}+",
-							Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+                    Pattern pattern = s.getRegex(offset, 25);
+                    LOG.debug("Use pattern {}", pattern);
 
-					LOG.debug("Use pattern {}", pattern);
+                    Matcher matcher = pattern.matcher(page);
+                    boolean contentMatched = false;
+                    while (matcher.find()) {
+                        if (isCancelled()) {
+                            break;
+                        }
 
-					Matcher matcher = pattern.matcher(page);
-					boolean contentMatched = false;
-					while (matcher.find()) {
-						if (isCancelled()) {
-							break;
-						}
+                        contentMatched = true;
+                        String line = matcher.group();
+                        publish(new QueryResult(s, offset, line));
+                    }
 
-						contentMatched = true;
-						String line = matcher.group();
-						publish(new QueryResult(s, offset, line));
-					}
+                    if (!contentMatched) {
+                        expectsNextEpisode = false;
+                    }
+                }
+            }
 
-					if (!contentMatched) {
-						expectsNextEpisode = false;
-					}
-				}
-			}
+            return null;
+        }
 
-			return null;
-		}
+        @Override
+        protected void process(List<QueryResult> chunks) {
+            for (QueryResult result : chunks) {
+                resultListModel.addElement(result);
+            }
+        }
 
-		@Override
-		protected void process(List<QueryResult> chunks) {
-			for (QueryResult result : chunks) {
-				resultListModel.addElement(result);
-			}
-		}
+        @Override
+        protected void done() {
+            final String msg = "finished looking for new episodes";
+            statusBar.setText(msg);
+            LOG.trace(msg);
+        }
+    }
 
-		@Override
-		protected void done() {
-			final String msg = "finished looking for new episodes";
-			statusBar.setText(msg);
-			LOG.trace(msg);
-		}
-	}
+    private static final long serialVersionUID = 8152825070548741280L;
+    private static Logger LOG = LoggerFactory.getLogger(ResultDialog.class);
 
-	private static final long serialVersionUID = 8152825070548741280L;
-	private static Logger LOG = LoggerFactory.getLogger(ResultDialog.class);
+    @Inject
+    protected DataService dataService;
 
-	@Inject
-	protected DataService dataService;
+    public void setDataService(DataService dataService) {
+        this.dataService = dataService;
+    }
 
-	public void setDataService(DataService dataService) {
-		this.dataService = dataService;
-	}
+    private JLabel titleLabel;
+    protected DefaultListModel resultListModel;
+    protected JLabel statusBar;
+    protected SwingWorker<Void, QueryResult> swingWorker;
 
-	private JLabel titleLabel;
-	protected DefaultListModel resultListModel;
-	protected JLabel statusBar;
-	protected SwingWorker<Void, QueryResult> swingWorker;
+    @PostConstruct
+    protected void init() throws IllegalAccessException,
+            InvocationTargetException, NoSuchMethodException {
+        setIconImage(new ImageIcon(getClass().getClassLoader().getResource(
+                "icons/tv.png")).getImage());
 
-	@PostConstruct
-	protected void init() throws IllegalAccessException,
-			InvocationTargetException, NoSuchMethodException {
-		setIconImage(new ImageIcon(getClass().getClassLoader().getResource(
-				"icons/tv.png")).getImage());
+        setModal(true);
+        setLayout(new MigLayout("fill, wrap 1", "[grow, fill]"));
+        setDefaultCloseOperation(HIDE_ON_CLOSE);
+        setPreferredSize(new Dimension(640, 320));
+        setTitle("Search results");
 
-		setModal(true);
-		setLayout(new MigLayout("fill, wrap 1", "[grow, fill]"));
-		setDefaultCloseOperation(HIDE_ON_CLOSE);
-		setPreferredSize(new Dimension(640, 320));
-		setTitle("Search results");
+        add(buildTitleLabel(), "growx 0, growy 0, align center, gapy paragraph");
+        add(buildList(), "grow, push, gapy paragraph");
+        add(buildCancelButton(), "tag cancel, align right, growx 0, growy 0");
+        add(buildStatusBar(), "dock south");
 
-		add(buildTitleLabel(), "growx 0, growy 0, align center, gapy paragraph");
-		add(buildList(), "grow, push, gapy paragraph");
-		add(buildCancelButton(), "tag cancel, align right, growx 0, growy 0");
-		add(buildStatusBar(), "dock south");
+        pack();
+    }
 
-		pack();
-	}
+    protected JLabel buildStatusBar() {
+        statusBar = new JLabel();
+        return statusBar;
+    }
 
-	protected JLabel buildStatusBar() {
-		statusBar = new JLabel();
-		return statusBar;
-	}
+    protected JScrollPane buildList() {
+        JList list = new JList();
+        list.addMouseListener(new DoubleClickListener());
+        resultListModel = new DefaultListModel();
+        list.setModel(resultListModel);
+        return new JScrollPane(list);
+    }
 
-	protected JScrollPane buildList() {
-		JList list = new JList();
-		list.addMouseListener(new DoubleClickListener());
-		resultListModel = new DefaultListModel();
-		list.setModel(resultListModel);
-		return new JScrollPane(list);
-	}
+    protected JComponent buildTitleLabel() {
+        titleLabel = new JLabel(getTitle());
+        Font font = titleLabel.getFont();
+        Font deriveFont = font.deriveFont(20.0f);
+        titleLabel.setFont(deriveFont);
+        return titleLabel;
+    }
 
-	protected JComponent buildTitleLabel() {
-		titleLabel = new JLabel(getTitle());
-		Font font = titleLabel.getFont();
-		Font deriveFont = font.deriveFont(20.0f);
-		titleLabel.setFont(deriveFont);
-		return titleLabel;
-	}
+    private JButton buildCancelButton() {
+        JButton button = new JButton("Cancel");
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onCancel();
+            }
+        });
+        return button;
+    }
 
-	private JButton buildCancelButton() {
-		JButton button = new JButton("Cancel");
-		button.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				onCancel();
-			}
-		});
-		return button;
-	}
+    protected void onCancel() {
+        swingWorker.cancel(true);
+        swingWorker = null;
+        setVisible(false);
+    }
 
-	protected void onCancel() {
-		swingWorker.cancel(true);
-		swingWorker = null;
-		setVisible(false);
-	}
-
-	public void startSearch() {
-		resultListModel.clear();
-		statusBar.setText("Start looking for newer episodes");
-		swingWorker = new WebResultWorker();
-		swingWorker.execute();
-	}
+    public void startSearch() {
+        resultListModel.clear();
+        statusBar.setText("Start looking for newer episodes");
+        swingWorker = new WebResultWorker();
+        swingWorker.execute();
+    }
 }

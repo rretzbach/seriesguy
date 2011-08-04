@@ -4,159 +4,182 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.MessageFormat;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 @XStreamAlias("series")
 public class Series {
-	protected String name = "Unnamed";
+    protected String name = "Unnamed";
 
-	protected Integer lastSeenEpisode = 1;
+    protected Integer lastSeenEpisode = 1;
 
-	protected String regex = "{name} {episode}";
+    protected String regex = "{name} {episode}";
 
-	protected Date lastModified = new Date();
+    protected Date lastModified = new Date();
 
-	protected Boolean finished = false;
+    protected Boolean finished = false;
 
-	protected SearchEngine searchEngine = null;
+    protected SearchEngine searchEngine = null;
 
-	protected Integer season = 1;
+    protected Integer season = 1;
 
-	protected String episodeFormat = "s{{season},number,00}e{{episode},number,00}";
+    protected String episodeFormat = "s{{season},number,00}e{{episode},number,00}";
 
-	protected String searchText = "{episode} {name}";
+    protected String searchText = "{episode} {name}";
 
-	protected String imagePath;
+    protected String imagePath;
 
-	public String getName() {
-		return name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-		setLastModified(new Date());
-	}
+    public void setName(String name) {
+        this.name = name;
+        setLastModified(new Date());
+    }
 
-	public Integer getLastSeenEpisode() {
-		return lastSeenEpisode;
-	}
+    public Integer getLastSeenEpisode() {
+        return lastSeenEpisode;
+    }
 
-	public void setLastSeenEpisode(Integer lastSeenEpisode) {
-		this.lastSeenEpisode = lastSeenEpisode;
-		setLastModified(new Date());
-	}
+    public void setLastSeenEpisode(Integer lastSeenEpisode) {
+        this.lastSeenEpisode = lastSeenEpisode;
+        setLastModified(new Date());
+    }
 
-	public String getSearchText() {
-		if (searchText == null)
-			return "";
-		return searchText;
-	}
+    public String getSearchText() {
+        if (searchText == null)
+            return "";
+        return searchText;
+    }
 
-	public void setSearchText(String searchText) {
-		this.searchText = searchText;
-		setLastModified(new Date());
-	}
+    public void setSearchText(String searchText) {
+        this.searchText = searchText;
+        setLastModified(new Date());
+    }
 
-	public Integer getSeason() {
-		if (season == null)
-			return 1;
-		return season;
-	}
+    public Integer getSeason() {
+        if (season == null)
+            return 1;
+        return season;
+    }
 
-	public void setSeason(Integer season) {
-		this.season = season;
-	}
+    public void setSeason(Integer season) {
+        this.season = season;
+    }
 
-	public String getEpisodeFormat() {
-		if (episodeFormat == null)
-			return "s{{season},number,00}e{{episode},number,00}";
-		return episodeFormat;
-	}
+    public String getEpisodeFormat() {
+        if (episodeFormat == null)
+            return "s{{season},number,00}e{{episode},number,00}";
+        return episodeFormat;
+    }
 
-	public void setEpisodeFormat(String episodeFormat) {
-		this.episodeFormat = episodeFormat;
-	}
+    public void setEpisodeFormat(String episodeFormat) {
+        this.episodeFormat = episodeFormat;
+    }
 
-	protected String getFormattedEpisode(Integer season, Integer episode) {
-		String format = episodeFormat == null ? "{{episode}}" : episodeFormat;
-		format = format.replace("{season}", "0").replace("{episode}", "1");
-		return MessageFormat.format(format, season, episode);
-	}
+    protected String getFormattedEpisode(Integer season, Integer episode) {
+        String format = episodeFormat == null ? "{{episode}}" : episodeFormat;
+        format = format.replace("{season}", "0").replace("{episode}", "1");
+        return MessageFormat.format(format, season, episode);
+    }
 
-	public CharSequence getFormattedEpisode(Integer episode) {
-		return getFormattedEpisode(season, episode);
-	}
+    public CharSequence getFormattedEpisode(Integer episode) {
+        return getFormattedEpisode(season, episode);
+    }
 
-	public String getFormattedEpisode() {
-		return getFormattedEpisode(season, lastSeenEpisode);
-	}
+    public String getFormattedEpisode() {
+        return getFormattedEpisode(season, lastSeenEpisode);
+    }
 
-	public Date getLastModified() {
-		return lastModified;
-	}
+    public Date getLastModified() {
+        return lastModified;
+    }
 
-	public void setLastModified(Date lastModified) {
-		this.lastModified = lastModified;
-	}
+    public void setLastModified(Date lastModified) {
+        this.lastModified = lastModified;
+    }
 
-	public String getRegex() {
-		if (regex == null)
-			return "";
-		return regex;
-	}
+    public String getRegex() {
+        if (regex == null)
+            return "";
+        return regex;
+    }
 
-	public void setRegex(String regex) {
-		this.regex = regex;
-		setLastModified(new Date());
-	}
+    public void setRegex(String regex) {
+        this.regex = regex;
+        setLastModified(new Date());
+    }
 
-	public String getRegex(Integer offset) {
-		return regex.replace("{episode}",
-				getFormattedEpisode(lastSeenEpisode + offset)).replace(
-				"{name}", getName());
-	}
+    public String getRegex(Integer offset) {
+        return regex.replace("{episode}",
+                getFormattedEpisode(lastSeenEpisode + offset)).replace(
+                "{name}", getName());
+    }
 
-	public Boolean getFinished() {
-		return finished;
-	}
+    /**
+     * @param offset
+     *            the episode number offset relative to lastEpisodeWatched
+     * @param charMargin
+     *            the number of characters to match before matching the actual
+     *            series name an episode
+     */
+    public Pattern getRegex(Integer offset, Integer charMargin) {
+        Pattern pattern = Pattern.compile(".{0," + charMargin + "}+"
+                + getRegex(offset) + ".{0," + charMargin + "}+",
+                Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+        return pattern;
+    }
 
-	public void setFinished(Boolean finished) {
-		this.finished = finished;
-	}
+    public Boolean getFinished() {
+        return finished;
+    }
 
-	public void setSearchEngine(SearchEngine searchEngine) {
-		this.searchEngine = searchEngine;
-	}
+    public void setFinished(Boolean finished) {
+        this.finished = finished;
+    }
 
-	public SearchEngine getSearchEngine() {
-		return searchEngine;
-	}
+    public void setSearchEngine(SearchEngine searchEngine) {
+        this.searchEngine = searchEngine;
+    }
 
-	public void seenCurrentEpisode() {
-		lastSeenEpisode += 1;
-	}
+    public SearchEngine getSearchEngine() {
+        return searchEngine;
+    }
 
-	public String getSearchEngineURL(int offset)
-			throws UnsupportedEncodingException {
-		String query = searchText.replace("{episode}",
-				getFormattedEpisode(lastSeenEpisode + offset)).replace(
-				"{name}", getName());
-		query = URLEncoder.encode(query, "UTF-8");
-		String urlTemplate = searchEngine.getUrlTemplate();
-		return urlTemplate.replace("{query}", query);
-	}
+    public void seenCurrentEpisode() {
+        lastSeenEpisode += 1;
+    }
 
-	@Override
-	public String toString() {
-		return name + " " + getFormattedEpisode(season, lastSeenEpisode);
-	}
+    public String getSearchEngineURL(int offset)
+            throws UnsupportedEncodingException {
+        String query = searchText.replace("{episode}",
+                getFormattedEpisode(lastSeenEpisode + offset)).replace(
+                "{name}", getName());
+        query = URLEncoder.encode(query, "UTF-8");
+        String urlTemplate = searchEngine.getUrlTemplate();
+        return urlTemplate.replace("{query}", query);
+    }
 
-	public void setImagePath(String imagePath) {
-		this.imagePath = imagePath;
-	}
+    @Override
+    public String toString() {
+        return name + " " + getFormattedEpisode(season, lastSeenEpisode);
+    }
 
-	public String getImagePath() {
-		return imagePath;
-	}
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
+    }
+
+    public String getImagePath() {
+        return imagePath;
+    }
+
+    public void validate() {
+        try {
+            getRegex(0, 1);
+        } catch (Exception e) {
+            throw new RuntimeException("Episode format is invalid", e);
+        }
+    }
 }

@@ -27,6 +27,7 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.TransferHandler;
@@ -51,306 +52,312 @@ import com.gmail.rretzbach.seriesguy.services.DataService;
  * 
  */
 @Component
-// TODO height of dialog should be appropriate
 public class SeriesDialog extends JDialog {
 
-	/**
-	 * Handles image url text drops by downloading the image and assigning it to
-	 * the series
-	 * 
-	 * @author rretzbach
-	 * 
-	 */
-	public final class ImageDropHandler extends TransferHandler {
-		private static final long serialVersionUID = -7238569708459551744L;
+    /**
+     * Handles image url text drops by downloading the image and assigning it to
+     * the series
+     * 
+     * @author rretzbach
+     * 
+     */
+    public final class ImageDropHandler extends TransferHandler {
+        private static final long serialVersionUID = -7238569708459551744L;
 
-		@Override
-		public int getSourceActions(JComponent c) {
-			return MOVE;
-		}
+        @Override
+        public int getSourceActions(JComponent c) {
+            return MOVE;
+        }
 
-		@Override
-		// TODO check for url as text
-		// TODO should also import local images
-		public boolean canImport(TransferSupport support) {
-			if (!support.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-				return false;
-			}
+        @Override
+        // TODO check for url as text
+        // TODO should also import local images
+        public boolean canImport(TransferSupport support) {
+            if (!support.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+                return false;
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		@Override
-		public boolean importData(TransferSupport support) {
-			if (!canImport(support)) {
-				return false;
-			}
+        @Override
+        public boolean importData(TransferSupport support) {
+            if (!canImport(support)) {
+                return false;
+            }
 
-			Transferable t = support.getTransferable();
-			String data = null;
-			try {
-				data = (String) t.getTransferData(DataFlavor.stringFlavor);
-				imagePath = downloadImage(data);
-				((JLabel) support.getComponent()).setIcon(new ImageIcon(ImageIO
-						.read(new File(imagePath))));
+            Transferable t = support.getTransferable();
+            String data = null;
+            try {
+                data = (String) t.getTransferData(DataFlavor.stringFlavor);
+                imagePath = downloadImage(data);
+                ((JLabel) support.getComponent()).setIcon(new ImageIcon(ImageIO
+                        .read(new File(imagePath))));
 
-			} catch (Exception e) {
-				// TODO error should be presented to the user
-				// that applies to more cases
-				LOG.debug("String data is {}", data);
-				LOG.error("Error while dropping data onto image", e);
-			}
+            } catch (Exception e) {
+                // TODO error should be presented to the user
+                // that applies to more cases
+                LOG.debug("String data is {}", data);
+                LOG.error("Error while dropping data onto image", e);
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		protected String downloadImage(String url) {
-			try {
+        protected String downloadImage(String url) {
+            try {
 
-				URL url2 = new URI(url).toURL();
-				String output = buildLocalImagePath(url2, dataService
-						.getImageDir().getAbsolutePath(), series.getName());
+                URL url2 = new URI(url).toURL();
+                String output = buildLocalImagePath(url2, dataService
+                        .getImageDir().getAbsolutePath(), series.getName());
 
-				FileUtils.copyURLToFile(url2, new File(output));
+                FileUtils.copyURLToFile(url2, new File(output));
 
-				return output;
-			} catch (Exception e) {
-				LOG.error("Error while downloading image", e);
-			}
+                return output;
+            } catch (Exception e) {
+                LOG.error("Error while downloading image", e);
+            }
 
-			return null;
-		}
+            return null;
+        }
 
-		public String buildLocalImagePath(URL url, String imageDirectoryPath,
-				String seriesName) throws IOException {
-			String name = url.getFile();
-			String ext = "";
-			if (name.matches("(?i).*jpe?g")) {
-				ext = "jpg";
-			} else if (name.matches("(?i).*png")) {
-				ext = "png";
-			} else if (name.matches("(?i).*gif")) {
-				ext = "gif";
-			}
+        public String buildLocalImagePath(URL url, String imageDirectoryPath,
+                String seriesName) throws IOException {
+            String name = url.getFile();
+            String ext = "";
+            if (name.matches("(?i).*jpe?g")) {
+                ext = "jpg";
+            } else if (name.matches("(?i).*png")) {
+                ext = "png";
+            } else if (name.matches("(?i).*gif")) {
+                ext = "gif";
+            }
 
-			String output = new File(imageDirectoryPath, seriesName + "." + ext)
-					.getAbsolutePath();
-			return output;
-		}
-	}
+            String output = new File(imageDirectoryPath, seriesName + "." + ext)
+                    .getAbsolutePath();
+            return output;
+        }
+    }
 
-	private static final long serialVersionUID = 8152825070548741280L;
-	private static Logger LOG = LoggerFactory.getLogger(SeriesDialog.class);
+    private static final long serialVersionUID = 8152825070548741280L;
+    private static Logger LOG = LoggerFactory.getLogger(SeriesDialog.class);
 
-	@Inject
-	protected DataService dataService;
+    @Inject
+    protected DataService dataService;
 
-	public void setDataService(DataService dataService) {
-		this.dataService = dataService;
-	}
+    public void setDataService(DataService dataService) {
+        this.dataService = dataService;
+    }
 
-	protected Series series;
-	protected String imagePath;
-	protected Map<String, JComponent> formElements;
-	protected JLabel titleLabel;
-	protected JComboBox searchEngineComboBox;
-	protected JLabel picLabel;
+    protected Series series;
+    protected String imagePath;
+    protected Map<String, JComponent> formElements;
+    protected JLabel titleLabel;
+    protected JComboBox searchEngineComboBox;
+    protected JLabel picLabel;
 
-	@PostConstruct
-	protected void init() throws IllegalAccessException,
-			InvocationTargetException, NoSuchMethodException, IOException {
-		setModal(true);
-		setLayout(new MigLayout("fillx, wrap 2", "[label]rel[grow, fill]"));
-		setDefaultCloseOperation(HIDE_ON_CLOSE);
-		setPreferredSize(new Dimension(640, 480));
+    @PostConstruct
+    protected void init() throws IllegalAccessException,
+            InvocationTargetException, NoSuchMethodException, IOException {
+        setModal(true);
+        setLayout(new MigLayout("fillx, wrap 2", "[label]rel[grow, fill]"));
+        setDefaultCloseOperation(HIDE_ON_CLOSE);
+        setMinimumSize(new Dimension(640, 480));
 
-		formElements = new HashMap<String, JComponent>();
+        formElements = new HashMap<String, JComponent>();
 
-		add(buildTitle(), "span 2, growx 0, align center, gapy paragraph");
-		addImagePathProperty("Image:", "imagePath");
-		addTextProperty("Name:", "name", "gapy paragraph");
-		addTextProperty("Season:", "season");
-		addTextProperty("Last seen episode:", "lastSeenEpisode");
-		addTextProperty("Episode format:", "episodeFormat");
-		addTextProperty("Search text:", "searchText");
-		addTextProperty("Match pattern:", "regex");
-		addSearchEngineComboBox("Search engine", "searchEngine");
-		addBooleanProperty("Finished:", "finished");
-		add(buildSaveButton(), "tag apply, span 2, split 2");
-		add(buildCancelButton(), "tag cancel");
+        add(buildTitle(), "span 2, growx 0, align center, gapy paragraph");
+        addImagePathProperty("Image:", "imagePath");
+        addTextProperty("Name:", "name", "gapy paragraph");
+        addTextProperty("Season:", "season");
+        addTextProperty("Last seen episode:", "lastSeenEpisode");
+        addTextProperty("Episode format:", "episodeFormat");
+        addTextProperty("Search text:", "searchText");
+        addTextProperty("Match pattern:", "regex");
+        addSearchEngineComboBox("Search engine", "searchEngine");
+        addBooleanProperty("Finished:", "finished");
+        add(buildSaveButton(), "tag apply, span 2, split 2");
+        add(buildCancelButton(), "tag cancel");
 
-		pack();
-	}
+        pack();
+    }
 
-	protected JLabel buildTitle() {
-		titleLabel = new JLabel(getTitle());
-		Font font = titleLabel.getFont();
-		Font deriveFont = font.deriveFont(20.0f);
-		titleLabel.setFont(deriveFont);
-		return titleLabel;
-	}
+    protected JLabel buildTitle() {
+        titleLabel = new JLabel(getTitle());
+        Font font = titleLabel.getFont();
+        Font deriveFont = font.deriveFont(20.0f);
+        titleLabel.setFont(deriveFont);
+        return titleLabel;
+    }
 
-	private JButton buildSaveButton() {
-		JButton button = new JButton("Save");
-		button.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				onSave();
-			}
-		});
-		return button;
-	}
+    private JButton buildSaveButton() {
+        JButton button = new JButton("Save");
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onSave();
+            }
+        });
+        return button;
+    }
 
-	protected void onSave() {
-		try {
-			for (Entry<String, JComponent> entry : formElements.entrySet()) {
-				String property = entry.getKey();
-				JComponent comp = entry.getValue();
-				LOG.trace("Write property {}", property);
-				if (comp instanceof JComboBox) {
-					PropertyUtils.setProperty(series, property,
-							((JComboBox) comp).getSelectedItem());
-				} else if (comp instanceof JCheckBox) {
-					PropertyUtils.setProperty(series, property,
-							((JCheckBox) comp).isSelected());
-				} else if (comp instanceof JTextField) {
-					if (PropertyUtils.getProperty(series, property) instanceof Integer) {
-						String text = ((JTextField) comp).getText();
-						int parseInt = Integer.parseInt(text);
-						PropertyUtils.setProperty(series, property, parseInt);
-					} else {
-						PropertyUtils.setProperty(series, property,
-								((JTextField) comp).getText());
-					}
-				}
-			}
+    // TODO validate *before* setting the values
+    protected void onSave() {
+        try {
+            for (Entry<String, JComponent> entry : formElements.entrySet()) {
+                String property = entry.getKey();
+                JComponent comp = entry.getValue();
+                LOG.trace("Write property {}", property);
+                if (comp instanceof JComboBox) {
+                    PropertyUtils.setProperty(series, property,
+                            ((JComboBox) comp).getSelectedItem());
+                } else if (comp instanceof JCheckBox) {
+                    PropertyUtils.setProperty(series, property,
+                            ((JCheckBox) comp).isSelected());
+                } else if (comp instanceof JTextField) {
+                    if (PropertyUtils.getProperty(series, property) instanceof Integer) {
+                        String text = ((JTextField) comp).getText();
+                        int parseInt = Integer.parseInt(text);
+                        PropertyUtils.setProperty(series, property, parseInt);
+                    } else {
+                        PropertyUtils.setProperty(series, property,
+                                ((JTextField) comp).getText());
+                    }
+                }
+            }
 
-			series.setImagePath(imagePath);
+            series.setImagePath(imagePath);
 
-			setVisible(false);
-		} catch (Exception e) {
-			LOG.error("Error while writing series properties", e);
-		}
+            series.validate();
 
-	}
+            setVisible(false);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(),
+                    "Validation failed", JOptionPane.WARNING_MESSAGE);
+            LOG.error("Error while writing series properties", e);
+        }
 
-	private JButton buildCancelButton() {
-		JButton button = new JButton("Cancel");
-		button.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				onCancel();
-			}
-		});
-		return button;
-	}
+    }
 
-	protected void onCancel() {
-		setVisible(false);
-	}
+    private JButton buildCancelButton() {
+        JButton button = new JButton("Cancel");
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onCancel();
+            }
+        });
+        return button;
+    }
 
-	public void updateValues(Series series, List<SearchEngine> searchEngines)
-			throws Exception {
-		this.series = series;
+    protected void onCancel() {
+        setVisible(false);
+    }
 
-		setTitle(series.getName());
-		buildTitle().setText(getTitle());
+    public void updateValues(Series series, List<SearchEngine> searchEngines)
+            throws Exception {
+        this.series = series;
 
-		for (Entry<String, JComponent> entry : formElements.entrySet()) {
-			String property = entry.getKey();
-			JComponent comp = entry.getValue();
-			if (comp instanceof JComboBox) {
-				LOG.debug("comp is {}",
-						PropertyUtils.getProperty(series, property));
-				((JComboBox) comp).setSelectedItem(PropertyUtils.getProperty(
-						series, property));
-			} else if (comp instanceof JCheckBox) {
-				((JCheckBox) comp).setSelected((Boolean) PropertyUtils
-						.getProperty(series, property));
-			} else if (comp instanceof JTextField) {
-				LOG.debug("Tried to get {} from {}", property, series);
-				((JTextField) comp).setText(BeanUtils.getProperty(series,
-						property));
-			}
-		}
+        setTitle(series.getName());
+        buildTitle().setText(getTitle());
 
-		if (series.getImagePath() != null) {
-			imagePath = series.getImagePath();
-			picLabel.setIcon(new ImageIcon(imagePath));
-			picLabel.setAlignmentY(0.5f);
-		} else {
-			picLabel.setIcon(new ImageIcon(getClass().getClassLoader()
-					.getResource("icons/help-icon.png")));
+        for (Entry<String, JComponent> entry : formElements.entrySet()) {
+            String property = entry.getKey();
+            JComponent comp = entry.getValue();
+            if (comp instanceof JComboBox) {
+                LOG.debug("comp is {}",
+                        PropertyUtils.getProperty(series, property));
+                ((JComboBox) comp).setSelectedItem(PropertyUtils.getProperty(
+                        series, property));
+            } else if (comp instanceof JCheckBox) {
+                ((JCheckBox) comp).setSelected((Boolean) PropertyUtils
+                        .getProperty(series, property));
+            } else if (comp instanceof JTextField) {
+                LOG.debug("Tried to get {} from {}", property, series);
+                ((JTextField) comp).setText(BeanUtils.getProperty(series,
+                        property));
+            }
+        }
 
-		}
+        if (series.getImagePath() != null) {
+            imagePath = series.getImagePath();
+            picLabel.setIcon(new ImageIcon(imagePath));
+            picLabel.setAlignmentY(0.5f);
+        } else {
+            picLabel.setIcon(new ImageIcon(getClass().getClassLoader()
+                    .getResource("icons/help-icon.png")));
 
-		updateSearchEngineListModel(searchEngines);
+        }
 
-		repaint();
-	}
+        updateSearchEngineListModel(searchEngines);
 
-	protected void addTextProperty(String label, String property,
-			String layoutConstraints) {
-		JComponent component = buildTextProperty(label, property);
-		add(component, layoutConstraints);
-	}
+        repaint();
 
-	protected void addTextProperty(String label, String property) {
-		JComponent component = buildTextProperty(label, property);
-		add(component);
-	}
+        pack();
+    }
 
-	protected JComponent buildTextProperty(String label, String property) {
-		add(new JLabel(label));
+    protected void addTextProperty(String label, String property,
+            String layoutConstraints) {
+        JComponent component = buildTextProperty(label, property);
+        add(component, layoutConstraints);
+    }
 
-		JTextField textField = new JTextField();
-		formElements.put(property, textField);
-		return textField;
-	}
+    protected void addTextProperty(String label, String property) {
+        JComponent component = buildTextProperty(label, property);
+        add(component);
+    }
 
-	protected void addBooleanProperty(String label, String property)
-			throws IllegalAccessException, InvocationTargetException,
-			NoSuchMethodException {
-		add(new JLabel(label));
+    protected JComponent buildTextProperty(String label, String property) {
+        add(new JLabel(label));
 
-		JCheckBox checkbox = new JCheckBox();
-		formElements.put(property, checkbox);
-		add(checkbox, "growx 0, align center");
-	}
+        JTextField textField = new JTextField();
+        formElements.put(property, textField);
+        return textField;
+    }
 
-	protected void addSearchEngineComboBox(String label, String property) {
-		add(new JLabel(label));
+    protected void addBooleanProperty(String label, String property)
+            throws IllegalAccessException, InvocationTargetException,
+            NoSuchMethodException {
+        add(new JLabel(label));
 
-		searchEngineComboBox = new JComboBox();
+        JCheckBox checkbox = new JCheckBox();
+        formElements.put(property, checkbox);
+        add(checkbox, "growx 0, align center");
+    }
 
-		formElements.put(property, searchEngineComboBox);
-		add(searchEngineComboBox);
-	}
+    protected void addSearchEngineComboBox(String label, String property) {
+        add(new JLabel(label));
 
-	protected void addImagePathProperty(String label, String property)
-			throws IOException {
-		add(new JLabel(label));
+        searchEngineComboBox = new JComboBox();
 
-		picLabel = new JLabel();
-		picLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		TransferHandler newHandler = new ImageDropHandler();
-		picLabel.setTransferHandler(newHandler);
-		add(picLabel);
-	}
+        formElements.put(property, searchEngineComboBox);
+        add(searchEngineComboBox);
+    }
 
-	public void updateSearchEngineListModel(List<SearchEngine> searchEngines) {
-		DefaultComboBoxModel model = prepareSearchEngineListModel(searchEngines);
-		searchEngineComboBox.setModel(model);
-	}
+    protected void addImagePathProperty(String label, String property)
+            throws IOException {
+        add(new JLabel(label));
 
-	public DefaultComboBoxModel prepareSearchEngineListModel(
-			List<SearchEngine> searchEngines) {
-		DefaultComboBoxModel model = new DefaultComboBoxModel();
+        picLabel = new JLabel();
+        picLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        TransferHandler newHandler = new ImageDropHandler();
+        picLabel.setTransferHandler(newHandler);
+        add(picLabel);
+    }
 
-		for (SearchEngine searchEngine : searchEngines) {
-			model.addElement(searchEngine);
-		}
-		return model;
-	}
+    public void updateSearchEngineListModel(List<SearchEngine> searchEngines) {
+        DefaultComboBoxModel model = prepareSearchEngineListModel(searchEngines);
+        searchEngineComboBox.setModel(model);
+    }
+
+    public DefaultComboBoxModel prepareSearchEngineListModel(
+            List<SearchEngine> searchEngines) {
+        DefaultComboBoxModel model = new DefaultComboBoxModel();
+
+        for (SearchEngine searchEngine : searchEngines) {
+            model.addElement(searchEngine);
+        }
+        return model;
+    }
 
 }

@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
+// TODO FEATURE implement comfortable keyboard navigation
+// TODO FEATURE implement dashboard screen
 public class Application {
 
     protected MainFrame mainFrame;
