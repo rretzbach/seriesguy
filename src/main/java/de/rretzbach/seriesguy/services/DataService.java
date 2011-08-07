@@ -1,11 +1,11 @@
-package com.gmail.rretzbach.seriesguy.services;
+package de.rretzbach.seriesguy.services;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import com.gmail.rretzbach.seriesguy.model.SearchEngine;
-import com.gmail.rretzbach.seriesguy.model.Series;
+import de.rretzbach.seriesguy.model.SearchEngine;
+import de.rretzbach.seriesguy.model.Series;
 
 public interface DataService {
 	List<Series> findAllSeries();

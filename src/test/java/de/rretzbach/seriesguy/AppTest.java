@@ -1,4 +1,4 @@
-package com.gmail.rretzbach.seriesguy;
+package de.rretzbach.seriesguy;
 
 import java.net.URL;
 
@@ -7,7 +7,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import com.gmail.rretzbach.seriesguy.screens.SeriesDialog;
+import de.rretzbach.seriesguy.screens.SeriesDialog;
 
 /**
  * Unit test for simple App.

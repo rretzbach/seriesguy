@@ -1,4 +1,4 @@
-package com.gmail.rretzbach.seriesguy.services;
+package de.rretzbach.seriesguy.services;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -15,20 +15,20 @@ import javax.annotation.PostConstruct;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.oxm.xstream.XStreamMarshaller;
 import org.springframework.stereotype.Component;
 
-import com.gmail.rretzbach.seriesguy.model.SearchEngine;
-import com.gmail.rretzbach.seriesguy.model.Series;
+import de.rretzbach.seriesguy.model.SearchEngine;
+import de.rretzbach.seriesguy.model.Series;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 @Component
 public class MarshallingDataService implements DataService {
 
 	protected static final String DATAFILE_PREF_KEY = "series.datafile";
-	protected static final String IMGDIR_PREF_KEY = "series.imgdir";
 
 	protected static Logger LOG = LoggerFactory
 			.getLogger(MarshallingDataService.class);
@@ -93,12 +93,6 @@ public class MarshallingDataService implements DataService {
 				}
 			}
 		}
-		{
-			String filePath = userRoot.get(IMGDIR_PREF_KEY, null);
-			if (filePath != null) {
-				imagedir = new File(filePath);
-			}
-		}
 	}
 
 	@Override
@@ -107,7 +101,11 @@ public class MarshallingDataService implements DataService {
 	}
 
 	public File getImageDir() {
-		return imagedir;
+		return getImageDir(datafile);
+	}
+
+	protected File getImageDir(File datafile) {
+		return new File(datafile, "seriesguy_images");
 	}
 
 	@Override
@@ -164,10 +162,30 @@ public class MarshallingDataService implements DataService {
 		save();
 	}
 
-	public void switchDatafile(File datafile) {
+	public boolean switchDatafile(File datafile) {
+		boolean needsSwitch = this.datafile.equals(datafile);
+		if (needsSwitch) {
+			LOG.debug("datafile is being switched");
+			copyImages(datafile);
+			this.datafile = datafile;
+			savePreferences();
+		}
+		return needsSwitch;
+	}
+
+	private void copyImages(File datafile) {
+		File srcDir = getImageDir(datafile);
+		File destDir = getImageDir(datafile);
+		try {
+			FileUtils.copyDirectory(srcDir, destDir);
+		} catch (IOException e) {
+			LOG.error("Error while copying images", e);
+		}
+	}
+
+	public void savePreferences() {
 		Preferences userRoot = Preferences.userRoot();
-		userRoot.put(IMGDIR_PREF_KEY, datafile.getAbsolutePath());
-		this.datafile = datafile;
+		userRoot.put(DATAFILE_PREF_KEY, this.datafile.getAbsolutePath());
 	}
 
 	@Override

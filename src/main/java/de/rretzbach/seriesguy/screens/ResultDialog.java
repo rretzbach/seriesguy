@@ -1,4 +1,4 @@
-package com.gmail.rretzbach.seriesguy.screens;
+package de.rretzbach.seriesguy.screens;
 
 import java.awt.Desktop;
 import java.awt.Dimension;
@@ -40,9 +40,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.gmail.rretzbach.seriesguy.model.QueryResult;
-import com.gmail.rretzbach.seriesguy.model.Series;
-import com.gmail.rretzbach.seriesguy.services.DataService;
+import de.rretzbach.seriesguy.model.QueryResult;
+import de.rretzbach.seriesguy.model.Series;
+import de.rretzbach.seriesguy.services.DataService;
 
 /**
  * Queries search engines for new episodes and displays the result. Doubleclick

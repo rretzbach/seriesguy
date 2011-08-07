@@ -2,13 +2,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.gmail.rretzbach.seriesguy</groupId>
+	<groupId>de.rretzbach.seriesguy</groupId>
 	<artifactId>seriesguy</artifactId>
 	<version>1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>seriesguy</name>
-	<url>http://maven.apache.org</url>
+	<url>https://github.com/rretzbach/seriesguy</url>
 	<description>Data driven application to manage a list of last seen episodes of series. A simple grep like mechanism checks arbitrary websites for newer episodes.</description>
 	<developers>
 		<developer>
@@ -86,7 +86,7 @@
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
-			<version>20030203.000550</version>
+			<version>2.0.1</version>
 			<type>jar</type>
 			<scope>compile</scope>
 		</dependency>
@@ -106,7 +106,7 @@
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
-							<mainClass>com.gmail.rretzbach.seriesguy.Application</mainClass>
+							<mainClass>de.rretzbach.seriesguy.Application</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
@@ -142,7 +142,7 @@
 							<jar>target/${project.artifactId}-${project.version}.jar</jar>
 							<errTitle>App Err</errTitle>
 							<classPath>
-								<mainClass>com.gmail.rretzbach.seriesguy.Application</mainClass>
+								<mainClass>de.rretzbach.seriesguy.Application</mainClass>
 							</classPath>
 							<icon>src/main/resources/icons/pug.ico</icon>
 							<jre>

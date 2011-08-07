@@ -1,4 +1,4 @@
-package com.gmail.rretzbach.seriesguy;
+package de.rretzbach.seriesguy;
 
 import javax.swing.UIManager;
 
@@ -36,7 +36,7 @@ public class Application {
 
     protected void initApplicationContext() {
         ApplicationContext factory = new AnnotationConfigApplicationContext(
-                "com.gmail.rretzbach.seriesguy");
+                "de.rretzbach.seriesguy");
 
         mainFrame = factory.getBean(MainFrame.class);
         mainFrame.setVisible(true);

@@ -1,4 +1,4 @@
-package com.gmail.rretzbach.seriesguy.screens;
+package de.rretzbach.seriesguy.screens;
 
 import java.awt.Dimension;
 import java.awt.Font;
@@ -30,8 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import com.gmail.rretzbach.seriesguy.model.SearchEngine;
-import com.gmail.rretzbach.seriesguy.services.DataService;
+import de.rretzbach.seriesguy.model.SearchEngine;
+import de.rretzbach.seriesguy.services.DataService;
 
 /**
  * Add, edit or remove search engines

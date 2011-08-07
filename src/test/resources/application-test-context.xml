@@ -4,13 +4,13 @@
 
 <beans>
 	<bean id="dataService"
-		class="com.gmail.rretzbach.seriesguy.services.MarshallingDataService">
+		class="de.rretzbach.seriesguy.services.MarshallingDataService">
 		<property name="marshaller" ref="xstreamMarshaller" />
 		<property name="unmarshaller" ref="xstreamMarshaller" />
 		<property name="filePath" value="classpath:/series-test.xml" />
 	</bean>
 	
-	<bean id="mainPanel" class="com.gmail.rretzbach.seriesguy.NewMainPanel" />
+	<bean id="mainPanel" class="de.rretzbach.seriesguy.NewMainPanel" />
 	
 	<bean id="xstreamMarshaller" class="org.springframework.oxm.xstream.XStreamMarshaller" />
 </beans>

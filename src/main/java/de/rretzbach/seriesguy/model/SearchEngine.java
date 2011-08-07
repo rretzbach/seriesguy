@@ -1,4 +1,4 @@
-package com.gmail.rretzbach.seriesguy.model;
+package de.rretzbach.seriesguy.model;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 

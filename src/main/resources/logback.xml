@@ -10,7 +10,7 @@
   </appender>
   
   <logger name="org.apache.http" level="INFO" />
-  <logger name="com.gmail.rretzbach.seriesguy" level="TRACE" />
+  <logger name="de.rretzbach.seriesguy" level="TRACE" />
 
   <root level="ERROR">
     <appender-ref ref="STDOUT" />

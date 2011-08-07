@@ -1,4 +1,4 @@
-package com.gmail.rretzbach.seriesguy.model;
+package de.rretzbach.seriesguy.model;
 
 public class QueryResult {
     private Series series;
