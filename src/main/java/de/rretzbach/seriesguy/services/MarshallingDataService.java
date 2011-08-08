@@ -3,40 +3,33 @@ package de.rretzbach.seriesguy.services;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.prefs.Preferences;
 
 import javax.annotation.PostConstruct;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.oxm.xstream.XStreamMarshaller;
 import org.springframework.stereotype.Component;
 
+import com.thoughtworks.xstream.annotations.XStreamAlias;
+
 import de.rretzbach.seriesguy.model.SearchEngine;
 import de.rretzbach.seriesguy.model.Series;
-import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 @Component
 public class MarshallingDataService implements DataService {
-
-	protected static final String DATAFILE_PREF_KEY = "series.datafile";
 
 	protected static Logger LOG = LoggerFactory
 			.getLogger(MarshallingDataService.class);
 
 	protected XStreamMarshaller marshaller;
-
-	protected File datafile;
-	protected File imagedir;
 
 	@XStreamAlias("seriesdataset")
 	public static class SeriesDataset {
@@ -80,32 +73,11 @@ public class MarshallingDataService implements DataService {
 		marshaller.setAnnotatedClass(SearchEngine.class);
 
 		dataset = new SeriesDataset();
-
-		Preferences userRoot = Preferences.userRoot();
-		{
-			String filepath = userRoot.get(DATAFILE_PREF_KEY, null);
-			if (filepath != null) {
-				datafile = new File(filepath);
-				try {
-					reload();
-				} catch (Exception e) {
-					LOG.error("Error while loading data", e);
-				}
-			}
-		}
 	}
 
 	@Override
 	public List<Series> findAllSeries() {
 		return dataset.getSeries();
-	}
-
-	public File getImageDir() {
-		return getImageDir(datafile);
-	}
-
-	protected File getImageDir(File datafile) {
-		return new File(datafile, "seriesguy_images");
 	}
 
 	@Override
@@ -114,20 +86,9 @@ public class MarshallingDataService implements DataService {
 	}
 
 	@Override
-	public void save() throws IOException {
+	public void save(File basedir) throws IOException {
 		marshaller.marshal(dataset, new StreamResult(new BufferedWriter(
-				new FileWriter(datafile))));
-	}
-
-	@Override
-	public void reload() throws IOException {
-		try {
-			dataset = (SeriesDataset) marshaller.unmarshal(new StreamSource(
-					new BufferedReader(new FileReader(datafile))));
-		} catch (FileNotFoundException e) {
-			LOG.error("Error while loading from xml file", e);
-		}
-
+				new FileWriter(new File(basedir, "series.xml")))));
 	}
 
 	@Override
@@ -157,46 +118,12 @@ public class MarshallingDataService implements DataService {
 	}
 
 	@Override
-	public void saveAs(File selectedFile) throws IOException {
-		switchDatafile(selectedFile);
-		save();
-	}
-
-	public boolean switchDatafile(File datafile) {
-		boolean needsSwitch = this.datafile.equals(datafile);
-		if (needsSwitch) {
-			LOG.debug("datafile is being switched");
-			copyImages(datafile);
-			this.datafile = datafile;
-			savePreferences();
+	public void load(File basedir) throws IOException {
+		File file = new File(basedir, "series.xml");
+		if (file.exists()) {
+			dataset = (SeriesDataset) marshaller.unmarshal(new StreamSource(
+					new BufferedReader(new FileReader(file))));
 		}
-		return needsSwitch;
-	}
-
-	private void copyImages(File datafile) {
-		File srcDir = getImageDir(datafile);
-		File destDir = getImageDir(datafile);
-		try {
-			FileUtils.copyDirectory(srcDir, destDir);
-		} catch (IOException e) {
-			LOG.error("Error while copying images", e);
-		}
-	}
-
-	public void savePreferences() {
-		Preferences userRoot = Preferences.userRoot();
-		userRoot.put(DATAFILE_PREF_KEY, this.datafile.getAbsolutePath());
-	}
-
-	@Override
-	public void load(File file) throws IOException {
-		switchDatafile(file);
-		reload();
-	}
-
-	@Override
-	public String getSourceDescription() {
-		return datafile.getAbsolutePath();
 	}
 
 }

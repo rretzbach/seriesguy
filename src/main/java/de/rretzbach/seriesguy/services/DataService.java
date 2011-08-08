@@ -20,16 +20,8 @@ public interface DataService {
 
 	void deleteSeries(Series series);
 
-	void save() throws IOException;
+	void save(File basedir) throws IOException;
 
-	void saveAs(File file) throws IOException;
-
-	void reload() throws IOException;
-
-	void load(File file) throws IOException;
-
-	File getImageDir();
-
-	String getSourceDescription();
+	void load(File basedir) throws IOException;
 
 }

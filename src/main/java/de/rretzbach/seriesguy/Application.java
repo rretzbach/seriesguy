@@ -1,5 +1,8 @@
 package de.rretzbach.seriesguy;
 
+import java.io.File;
+import java.util.prefs.Preferences;
+
 import javax.swing.UIManager;
 
 import org.slf4j.Logger;
@@ -11,35 +14,51 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 // TODO FEATURE implement dashboard screen
 public class Application {
 
-    protected MainFrame mainFrame;
+	protected MainFrame mainFrame;
 
-    private static final Logger LOG = LoggerFactory
-            .getLogger(Application.class);
+	protected static final String BASEDIR = "seriesguy.basedir";
 
-    public Application() {
-        javax.swing.SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    UIManager.setLookAndFeel(UIManager
-                            .getSystemLookAndFeelClassName());
-                } catch (Exception e) {
-                    LOG.error("Error while setting platform look and feel", e);
-                }
-                initApplicationContext();
-            }
-        });
-    }
+	private static final Logger LOG = LoggerFactory
+			.getLogger(Application.class);
 
-    public static void main(String[] args) {
-        new Application();
-    }
+	public Application() {
+		javax.swing.SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					UIManager.setLookAndFeel(UIManager
+							.getSystemLookAndFeelClassName());
+				} catch (Exception e) {
+					LOG.error("Error while setting platform look and feel", e);
+				}
+				initApplicationContext();
+			}
+		});
+	}
 
-    protected void initApplicationContext() {
-        ApplicationContext factory = new AnnotationConfigApplicationContext(
-                "de.rretzbach.seriesguy");
+	public static void main(String[] args) {
+		new Application();
+	}
 
-        mainFrame = factory.getBean(MainFrame.class);
-        mainFrame.setVisible(true);
-    }
+	protected void initApplicationContext() {
+		ApplicationContext factory = new AnnotationConfigApplicationContext(
+				"de.rretzbach.seriesguy");
+
+		mainFrame = factory.getBean(MainFrame.class);
+		mainFrame.setVisible(true);
+	}
+
+	public static File getBasedir() {
+		String prefBasedir = Preferences.userRoot().get(BASEDIR, null);
+		return prefBasedir == null ? null : new File(prefBasedir);
+	}
+
+	public static File getImagedir() {
+		return new File(getBasedir(), "images");
+	}
+
+	public static void storeBasedir(File basedir) {
+		Preferences userRoot = Preferences.userRoot();
+		userRoot.put(BASEDIR, basedir.getAbsolutePath());
+	}
 
 }

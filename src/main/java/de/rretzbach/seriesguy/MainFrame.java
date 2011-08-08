@@ -9,6 +9,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -55,6 +56,8 @@ import de.rretzbach.seriesguy.services.DataService;
  * 
  */
 @Component
+// TODO doubleclick should open edit series dialog
+// TODO add a quicker way to do "seen" on a series using the mouse
 public class MainFrame extends JFrame {
 
 	private static Logger LOG = LoggerFactory.getLogger(MainFrame.class);
@@ -97,9 +100,12 @@ public class MainFrame extends JFrame {
 		public JButton buildButton(Series series) {
 			ImageIcon icon = null;
 			String imagePath = series.getImagePath();
+			File imagedir = Application.getImagedir();
 
-			if (imagePath != null) {
-				Image image = Toolkit.getDefaultToolkit().getImage(imagePath);
+			if (imagePath != null && imagedir != null) {
+				File imagePath2 = new File(imagedir, imagePath);
+				Image image = Toolkit.getDefaultToolkit().getImage(
+						imagePath2.getAbsolutePath());
 
 				ImageIcon ti = new ImageIcon(image);
 				int pref = 150;
@@ -207,6 +213,7 @@ public class MainFrame extends JFrame {
 
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+		// TODO remember size in preferences
 		setPreferredSize(new Dimension(800, 600));
 
 		setLayout(new MigLayout("fill"));
@@ -217,11 +224,48 @@ public class MainFrame extends JFrame {
 
 		add(buildStatusBar(), "dock south");
 
-		refreshSeriesListModel();
+		loadSeries();
 
 		pack();
 
 		placeOnScreenCenter();
+	}
+
+	protected void loadSeries() {
+		try {
+			File basedir = Application.getBasedir();
+			if (basedir == null) {
+				basedir = askForBasedir();
+				Application.storeBasedir(basedir);
+				updateTitle();
+			}
+			dataService.load(basedir);
+		} catch (IOException e) {
+			LOG.error("Error while loading data", e);
+		}
+		refreshSeriesListModel();
+	}
+
+	protected File askForBasedir() {
+		final JFileChooser fc = new JFileChooser();
+		fc.setDialogTitle("Please choose a save directory");
+		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		int returnVal = fc.showOpenDialog(null);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			return fc.getSelectedFile();
+		}
+		throw new RuntimeException("Action was cancelled by user");
+	}
+
+	protected File askForSaveBasedir() {
+		final JFileChooser fc = new JFileChooser();
+		fc.setDialogTitle("Please choose a save directory");
+		fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		int returnVal = fc.showSaveDialog(null);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			return fc.getSelectedFile();
+		}
+		throw new RuntimeException("Action was cancelled by user");
 	}
 
 	private java.awt.Component buildStatusBar() {
@@ -466,24 +510,25 @@ public class MainFrame extends JFrame {
 	}
 
 	protected void onOpenFile() {
-		final JFileChooser fc = new JFileChooser();
-		fc.setDialogTitle("Please choose a file to load series data");
-		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		int returnVal = fc.showOpenDialog(null);
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			try {
-				dataService.load(fc.getSelectedFile());
-				updateTitle();
-			} catch (IOException e) {
-				LOG.error("Error while opening file", e);
-			}
+		try {
+			File basedir = askForBasedir();
+			dataService.load(basedir);
+			Application.storeBasedir(basedir);
+			updateTitle();
 			refreshSeriesListModel();
+		} catch (Exception e) {
+			LOG.error("Error while loading data", e);
 		}
 	}
 
 	protected void onSave() {
 		try {
-			dataService.save();
+			File basedir = Application.getBasedir();
+			if (basedir == null) {
+				basedir = askForSaveBasedir();
+				Application.storeBasedir(basedir);
+			}
+			dataService.save(basedir);
 			statusBar.setText("File saved successfully");
 		} catch (IOException e) {
 			LOG.error("Error while saving data", e);
@@ -491,25 +536,23 @@ public class MainFrame extends JFrame {
 	}
 
 	protected void onSaveAs() {
-		final JFileChooser fc = new JFileChooser();
-		fc.setDialogTitle("Please choose a file to save series data");
-		int returnVal = fc.showSaveDialog(null);
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			try {
-				dataService.saveAs(fc.getSelectedFile());
-				updateTitle();
-				statusBar.setText("File saved successfully");
-			} catch (IOException e) {
-				LOG.error("Error while saving data", e);
-			}
+		try {
+			File basedir = askForSaveBasedir();
+			Application.storeBasedir(basedir);
+			dataService.save(basedir);
+			updateTitle();
+			statusBar.setText("File saved successfully");
+		} catch (IOException e) {
+			LOG.error("Error while saving data", e);
 		}
 	}
 
 	protected void updateTitle() {
-		String string = "SeriesGuy 1.0";
-		string += dataService.getSourceDescription() == null ? "" : " - "
-				+ dataService.getSourceDescription();
-		setTitle(string);
+		StringBuffer sb = new StringBuffer();
+		sb.append("SeriesGuy 1.0");
+		File basedir = Application.getBasedir();
+		sb.append(basedir != null ? " - " + basedir : "");
+		setTitle(sb.toString());
 	}
 
 	// TODO ask to save pending changes
